@@ -53,7 +53,7 @@ public class MainActivity extends AppCompatActivity {
 
         switch1.setOnCheckedChangeListener((buttonView, isChecked) -> {
             if (isChecked) {
-                textView.setText("Führung aktiviert.");
+                textView.setText("Die App läuft im Hintergrund.");
                 startService(mainServiceIntent);
             }
             else {
