@@ -38,6 +38,12 @@ public class MainService extends Service implements LocationListener {
     public static boolean debugMode = false;
 
     @Override
+    public void onDestroy() {
+        super.onDestroy();
+        locationManager.removeUpdates(this);
+    }
+
+    @Override
     public IBinder onBind(Intent intent) {
         throw new UnsupportedOperationException("Not yet implemented");
     }
