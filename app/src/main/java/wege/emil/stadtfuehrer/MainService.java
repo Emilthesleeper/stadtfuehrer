@@ -24,22 +24,21 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.net.HttpURLConnection;
-import java.net.MalformedURLException;
 import java.net.SocketTimeoutException;
 import java.net.URL;
 import java.util.Locale;
 import java.util.stream.Collectors;
 
 public class MainService extends Service implements LocationListener {
-    LocationManager locationManager;
     public static final String ACTION_LOCATION_BROADCAST = MainService.class.getName() + "LocationBroadcast", MESSAGE = "message";
-    TextToSpeech tts;
-    String lastMessage = "";
     public static boolean debugMode = false;
+
+    private LocationManager locationManager;
+    private TextToSpeech tts;
+    private String lastMessage = "";
 
     @Override
     public void onDestroy() {
-        super.onDestroy();
         locationManager.removeUpdates(this);
     }
 
@@ -50,7 +49,6 @@ public class MainService extends Service implements LocationListener {
 
     @Override
     public void onCreate() {
-        super.onCreate();
         tts = new TextToSpeech(this, status -> {
             if (status == TextToSpeech.SUCCESS) {
                 tts.setLanguage(Locale.GERMAN);
@@ -94,17 +92,13 @@ public class MainService extends Service implements LocationListener {
             } else {
                 return new JSONObject("{\"status\" : \"-1\", \"message\" : \"Ihr Gerät ist veraltet.\"}");
             }
-        } catch (MalformedURLException e) {
-            throw new RuntimeException(e);
         } catch (SocketTimeoutException e) {
             try {
                 return new JSONObject("{\"status\" : \"-1\", \"message\" : \"Der Server hat nicht rechtzeitig geantwortet, falls das Problem weiterhin besteht, sind die Server gerade nicht verfügbar.\"}");
             } catch (JSONException ex) {
                 throw new RuntimeException(ex);
             }
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        } catch (JSONException e) {
+        } catch (JSONException | IOException e) {
             throw new RuntimeException(e);
         } finally {
             if (connection != null) {
