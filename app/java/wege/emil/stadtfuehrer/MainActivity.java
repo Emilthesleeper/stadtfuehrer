@@ -18,12 +18,14 @@ import android.widget.TextView;
 
 public class MainActivity extends AppCompatActivity {
 
+    private final static String[] PERMISSIONS = {android.Manifest.permission.ACCESS_FINE_LOCATION, android.Manifest.permission.ACCESS_COARSE_LOCATION};
+    private final static int PERMISSION_ALL = 1;
+
     @SuppressLint("UseSwitchCompatOrMaterialCode")
-    Switch switch1;
-    TextView textView;
-    Intent mainServiceIntent;
-    final static String[] PERMISSIONS = {android.Manifest.permission.ACCESS_FINE_LOCATION, android.Manifest.permission.ACCESS_COARSE_LOCATION};
-    final static int PERMISSION_ALL = 1;
+    private Switch switch1;
+    private TextView textView;
+    private Intent mainServiceIntent;
+    
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -55,8 +57,7 @@ public class MainActivity extends AppCompatActivity {
             if (isChecked) {
                 textView.setText("Führung aktiviert.");
                 startService(mainServiceIntent);
-            }
-            else {
+            } else {
                 textView.setText("Die App \"Stadtführer Görlitz\", gibt basierend auf dem Standort beim Laufen durch Görlitz zufällig Informationen über Gebäude und Sehenswürdigkeiten im Umkreis von 50m. Die App entsteht im Rahmen einer Arbeit um zu zeigen, wie gefährlich Standortortung sein kann, und wie man sie gut einsetzen kann.");
                 stopService(mainServiceIntent);
             }
