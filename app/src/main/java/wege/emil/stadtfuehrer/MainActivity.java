@@ -2,7 +2,7 @@ package wege.emil.stadtfuehrer;
 
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
-import androidx.compose.ui.text.font.Typeface;
+import androidx.core.content.res.ResourcesCompat;
 import androidx.localbroadcastmanager.content.LocalBroadcastManager;
 
 import android.annotation.SuppressLint;
@@ -11,6 +11,7 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.pm.PackageManager;
+import android.graphics.Typeface;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.StrictMode;
@@ -23,8 +24,11 @@ public class MainActivity extends AppCompatActivity {
     Switch switch1;
     @SuppressLint("UseSwitchCompatOrMaterialCode")
     Switch switch2;
+    Typeface Rubik;
+    android.graphics.Typeface Cascadia;
     TextView textView;
     Intent mainServiceIntent;
+    final static String defaultText = "\"Die App \\\"Stadtführer Görlitz\\\", gibt basierend auf dem Standort beim Laufen durch Görlitz zufällig Informationen über Gebäude und Sehenswürdigkeiten im Umkreis von 50m. Die App entsteht im Rahmen einer Arbeit um zu zeigen, wie gefährlich Standortortung sein kann, und wie man sie gut einsetzen kann.\"";
     final static String[] PERMISSIONS = {android.Manifest.permission.ACCESS_FINE_LOCATION, android.Manifest.permission.ACCESS_COARSE_LOCATION};
     final static int PERMISSION_ALL = 1;
 
@@ -44,7 +48,8 @@ public class MainActivity extends AppCompatActivity {
         switch1 = findViewById(R.id.switch1);
         switch2 = findViewById(R.id.switch2);
         textView = findViewById(R.id.textView1);
-        Typeface rubik = Typeface.createFromAsset(getAssets(), "fonts/Rubik.ttf");
+        Rubik = ResourcesCompat.getFont(this, R.font.rubik);
+        Cascadia = ResourcesCompat.getFont(this, R.font.cascadia);
         MainService mainService;
         try {
             mainService = MainService.class.newInstance();
@@ -70,7 +75,8 @@ public class MainActivity extends AppCompatActivity {
                 textView.setText("Die App läuft im Hintergrund.");
                 startService(mainServiceIntent);
             } else {
-                textView.setText("Die App \"Stadtführer Görlitz\", gibt basierend auf dem Standort beim Laufen durch Görlitz zufällig Informationen über Gebäude und Sehenswürdigkeiten im Umkreis von 50m. Die App entsteht im Rahmen einer Arbeit um zu zeigen, wie gefährlich Standortortung sein kann, und wie man sie gut einsetzen kann.");
+                textView.setText(defaultText);
+                switch2.setChecked(false);
                 stopService(mainServiceIntent);
             }
         });
@@ -81,11 +87,17 @@ public class MainActivity extends AppCompatActivity {
                 } else {
                     MainService.debugMode = true;
                     textView.setTextSize(15);
-                    textView.setTypeface((android.graphics.Typeface) rubik);
+                    textView.setTypeface((android.graphics.Typeface) Cascadia);
                 }
             } else {
                 MainService.debugMode = false;
+                if (!switch1.isChecked()) {
+                    textView.setText(defaultText);
+                } else {
+                    textView.setText("Die App läuft im Hintergrund.");
+                }
                 textView.setTextSize(24);
+                textView.setTypeface((android.graphics.Typeface) Rubik);
             }
         });
     }

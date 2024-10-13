@@ -142,7 +142,7 @@ public class MainService extends Service implements LocationListener {
             return;
         }
         if (debugMode) {
-            changeViewText();
+            changeViewText(server_answer.toString());
             return;
         }
         switch (status) {
