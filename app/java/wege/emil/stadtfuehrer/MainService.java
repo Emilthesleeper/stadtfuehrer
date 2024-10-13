@@ -34,20 +34,22 @@ import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
 public class MainService extends Service implements LocationListener {
-    LocationManager locationManager;
-    public static final String ACTION_LOCATION_BROADCAST = MainService.class.getName() + "LocationBroadcast", MESSAGE = "message";
-    TextToSpeech tts;
-    String lastMessage = "";
+
+
+    public static final String ACTION_LOCATION_BROADCAST = MainService.class.getName() + "LocationBroadcast"
+    public static final String MESSAGE = "message";
+
+    private LocationManager locationManager;
+    private TextToSpeech tts;
+    private String lastMessage = "";
 
     @Override
     public IBinder onBind(Intent intent) {
-        // TODO: Return the communication channel to the service.
         throw new UnsupportedOperationException("Not yet implemented");
     }
 
     @Override
     public void onCreate() {
-        super.onCreate();
         tts = new TextToSpeech(this, status -> {
             if (status == TextToSpeech.SUCCESS) {
                 tts.setLanguage(Locale.GERMAN);
@@ -65,7 +67,7 @@ public class MainService extends Service implements LocationListener {
                         2000,
                         50, this);
             } else {
-                String message = "Ihr Gerät unterstützt kein GPS, deswegen wir die App nicht funktionieren.";
+                String message = "Ihr Gerät unterstützt kein GPS, deswegen wird die App nicht funktionieren.,";
                 changeViewText(message);
             }
         }
@@ -89,18 +91,13 @@ public class MainService extends Service implements LocationListener {
             } else {
                 return new JSONObject("{\"status\" : \"-1\", \"message\" : \"Ihr Gerät ist veraltet.\"}");
             }
-        } catch (MalformedURLException e) {
-            throw new RuntimeException(e);
+
         } catch (SocketTimeoutException e) {
-            try {
-                return new JSONObject("{\"status\" : \"-1\", \"message\" : \"Der Server hat nicht rechtzeitig geantwortet, falls das Problem weiterhin besteht, sind die Server gerade nicht verfügbar.\"}");
-            } catch (JSONException ex) {
-                throw new RuntimeException(ex);
-            }
-        } catch (IOException e) {
+            return new JSONObject("{\"status\" : \"-1\", \"message\" : \"Der Server hat nicht rechtzeitig geantwortet, falls das Problem weiterhin besteht, sind die Server gerade nicht verfügbar.\"}");
+        
+        } catch (IOException | JSONException | MalformedURLException e) {
             throw new RuntimeException(e);
-        } catch (JSONException e) {
-            throw new RuntimeException(e);
+
         } finally {
             if (connection != null) {
                 connection.disconnect();
@@ -116,7 +113,6 @@ public class MainService extends Service implements LocationListener {
 
     @Override
     public void onLocationChanged(@NonNull Location location) {
-        System.out.println("test");
         String message, status, server_message;
 
         JSONObject server_answer = sendRequest("https://stadt.emilsleeper.com/api/get_nearest_place/"+location.getLatitude()+"/"+location.getLongitude());
@@ -144,6 +140,7 @@ public class MainService extends Service implements LocationListener {
                 message = "Bitte aktualisieren sie die App im Play Store, der Server hat einen in dieser Version unbekannten Statuscode zurückgegeben";
                 break;
         }
+
         if (!lastMessage.equals(message)) {
             changeViewText(message);
             tts.speak(message, TextToSpeech.QUEUE_ADD, null);
