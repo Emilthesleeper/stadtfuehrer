@@ -2,7 +2,10 @@ package wege.emil.stadtfuehrer;
 
 import android.Manifest;
 import android.app.Service;
+import android.content.BroadcastReceiver;
+import android.content.Context;
 import android.content.Intent;
+import android.content.IntentFilter;
 import android.content.pm.PackageManager;
 import android.location.Location;
 import android.location.LocationListener;
@@ -35,6 +38,7 @@ public class MainService extends Service implements LocationListener {
     public static final String ACTION_LOCATION_BROADCAST = MainService.class.getName() + "LocationBroadcast", MESSAGE = "message";
     TextToSpeech tts;
     String lastMessage = "";
+    public static boolean debugMode = false;
 
     @Override
     public IBinder onBind(Intent intent) {
@@ -114,16 +118,31 @@ public class MainService extends Service implements LocationListener {
 
     @Override
     public void onLocationChanged(@NonNull Location location) {
-        changeViewText("test");
+        if (debugMode) {
+            changeViewText("Sende Anfrage");
+        }
         String message, status, server_message;
 
         JSONObject server_answer = sendRequest("https://stadt.emilsleeper.com/api/get_nearest_place/"+location.getLatitude()+"/"+location.getLongitude());
+
+        if (debugMode) {
+            changeViewText("Antwort erhalten");
+        }
 
         try {
             status = (String) server_answer.get("status");
             server_message = (String) server_answer.get("message");
         } catch (JSONException e) {
+            if (debugMode) {
+                changeViewText("Der Server gab kein JSON-Objekt zurück, sondern: "+server_answer.toString());
+                return;
+            }
             tts.speak("Der Server gab eine ungültige Antwort.", TextToSpeech.QUEUE_ADD, null);
+            changeViewText("Der Server gab eine ungültige Antwort.");
+            return;
+        }
+        if (debugMode) {
+            changeViewText();
             return;
         }
         switch (status) {
@@ -139,7 +158,7 @@ public class MainService extends Service implements LocationListener {
             case "2":
                 return;
             default:
-                message = "Bitte aktualisieren sie die App im Play Store, der Server hat einen in dieser Version unbekannten Statuscode zurückgegeben";
+                message = "Bitte aktualisieren sie die App, falls vorhanden im Play Store, der Server hat einen in dieser Version unbekannten Statuscode zurückgegeben";
                 break;
         }
         if (!lastMessage.equals(message)) {

@@ -8,13 +8,13 @@
 
     <TextView
         android:id="@+id/textView"
-        android:layout_width="362dp"
-        android:layout_height="141dp"
+        android:layout_width="356dp"
+        android:layout_height="134dp"
         android:layout_marginStart="32dp"
         android:layout_marginLeft="32dp"
         android:layout_marginTop="24dp"
         android:text="Stadtführer Görlitz"
-        android:textSize="60sp"
+        android:textSize="48sp"
         android:textStyle="bold"
         android:typeface="normal"
         android:verticalScrollbarPosition="defaultPosition"
@@ -27,7 +27,7 @@
         android:layout_height="wrap_content"
         android:layout_marginStart="44dp"
         android:layout_marginLeft="44dp"
-        android:layout_marginTop="32dp"
+        android:layout_marginTop="16dp"
         android:minHeight="48dp"
         android:text="Aus/An"
         android:textSize="34sp"
@@ -36,14 +36,30 @@
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@+id/textView" />
 
-    <TextView
-        android:id="@+id/textView1"
-        android:layout_width="329dp"
-        android:layout_height="355dp"
+    <Switch
+        android:id="@+id/switch2"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
         android:layout_marginStart="44dp"
         android:layout_marginLeft="44dp"
-        android:layout_marginTop="24dp"
+        android:layout_marginTop="76dp"
+        android:minHeight="48dp"
+        android:text="Debug"
+        android:textSize="34sp"
+        android:textStyle="bold"
+        android:typeface="normal"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/textView" />
+
+    <TextView
+        android:id="@+id/textView1"
+        android:layout_width="334dp"
+        android:layout_height="310dp"
+        android:layout_marginStart="36dp"
+        android:layout_marginLeft="36dp"
+        android:layout_marginTop="100dp"
         android:capitalize="none"
+        android:fontFamily="sans-serif"
         android:text="Die App &quot;Stadtführer Görlitz&quot;, gibt basierend auf dem Standort beim Laufen durch Görlitz zufällig Informationen über Gebäude und Sehenswürdigkeiten in der Nähe. Die App entsteht im Rahmen einer Arbeit um zu zeigen, wie gefährlich Standortortung sein kann, und wie man sie gut einsetzen kann."
         android:textSize="24sp"
         android:textStyle="italic"

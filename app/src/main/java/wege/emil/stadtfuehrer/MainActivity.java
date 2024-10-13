@@ -2,6 +2,7 @@ package wege.emil.stadtfuehrer;
 
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.compose.ui.text.font.Typeface;
 import androidx.localbroadcastmanager.content.LocalBroadcastManager;
 
 import android.annotation.SuppressLint;
@@ -20,11 +21,14 @@ public class MainActivity extends AppCompatActivity {
 
     @SuppressLint("UseSwitchCompatOrMaterialCode")
     Switch switch1;
+    @SuppressLint("UseSwitchCompatOrMaterialCode")
+    Switch switch2;
     TextView textView;
     Intent mainServiceIntent;
     final static String[] PERMISSIONS = {android.Manifest.permission.ACCESS_FINE_LOCATION, android.Manifest.permission.ACCESS_COARSE_LOCATION};
     final static int PERMISSION_ALL = 1;
 
+    @SuppressLint("SetTextI18n")
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -38,15 +42,25 @@ public class MainActivity extends AppCompatActivity {
         }
 
         switch1 = findViewById(R.id.switch1);
+        switch2 = findViewById(R.id.switch2);
         textView = findViewById(R.id.textView1);
-        mainServiceIntent = new Intent(this, MainService.class);
+        Typeface rubik = Typeface.createFromAsset(getAssets(), "fonts/Rubik.ttf");
+        MainService mainService;
+        try {
+            mainService = MainService.class.newInstance();
+        } catch (IllegalAccessException e) {
+            throw new RuntimeException(e);
+        } catch (InstantiationException e) {
+            throw new RuntimeException(e);
+        }
+        mainServiceIntent = new Intent(this, mainService.getClass());
 
         LocalBroadcastManager.getInstance(this).registerReceiver(
                 new BroadcastReceiver() {
                     @Override
                     public void onReceive(Context context, Intent intent) {
                         String message = intent.getStringExtra(MainService.MESSAGE);
-                        textView.setText(message+"\n"+textView.getText());
+                        textView.setText(message + "\n" + textView.getText());
                     }
                 }, new IntentFilter(MainService.ACTION_LOCATION_BROADCAST)
         );
@@ -55,10 +69,23 @@ public class MainActivity extends AppCompatActivity {
             if (isChecked) {
                 textView.setText("Die App läuft im Hintergrund.");
                 startService(mainServiceIntent);
-            }
-            else {
+            } else {
                 textView.setText("Die App \"Stadtführer Görlitz\", gibt basierend auf dem Standort beim Laufen durch Görlitz zufällig Informationen über Gebäude und Sehenswürdigkeiten im Umkreis von 50m. Die App entsteht im Rahmen einer Arbeit um zu zeigen, wie gefährlich Standortortung sein kann, und wie man sie gut einsetzen kann.");
                 stopService(mainServiceIntent);
+            }
+        });
+        switch2.setOnCheckedChangeListener((buttonView, isChecked) -> {
+            if (isChecked) {
+                if (!switch1.isChecked()) {
+                    switch2.setChecked(false);
+                } else {
+                    MainService.debugMode = true;
+                    textView.setTextSize(15);
+                    textView.setTypeface((android.graphics.Typeface) rubik);
+                }
+            } else {
+                MainService.debugMode = false;
+                textView.setTextSize(24);
             }
         });
     }
