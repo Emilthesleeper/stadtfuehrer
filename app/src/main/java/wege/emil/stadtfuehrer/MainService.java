@@ -1,13 +1,15 @@
 package wege.emil.stadtfuehrer;
 
 import android.Manifest;
+import android.annotation.SuppressLint;
 import android.app.Service;
 import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.location.Location;
 import android.location.LocationListener;
 import android.location.LocationManager;
-import android.os.Build;
+import android.media.AudioManager;
+import android.media.MediaPlayer;
 import android.os.IBinder;
 import android.speech.tts.TextToSpeech;
 
@@ -23,11 +25,11 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
-import java.net.HttpURLConnection;
-import java.net.SocketTimeoutException;
 import java.net.URL;
 import java.util.Locale;
 import java.util.stream.Collectors;
+
+import javax.net.ssl.HttpsURLConnection;
 
 public class MainService extends Service implements LocationListener {
     public static final String ACTION_LOCATION_BROADCAST = MainService.class.getName() + "LocationBroadcast", MESSAGE = "message";
@@ -36,10 +38,19 @@ public class MainService extends Service implements LocationListener {
     private LocationManager locationManager;
     private TextToSpeech tts;
     private String lastMessage = "";
+    MediaPlayer mediaPlayer = new MediaPlayer();
 
     @Override
     public void onDestroy() {
         locationManager.removeUpdates(this);
+        if (mediaPlayer.isPlaying()) {
+            mediaPlayer.stop();
+        }
+        mediaPlayer.release();
+        if (tts.isSpeaking()) {
+            tts.stop();
+        }
+        tts.shutdown();
     }
 
     @Override
@@ -55,7 +66,8 @@ public class MainService extends Service implements LocationListener {
                 tts.speak("Die App läuft im Hintergrund.", TextToSpeech.QUEUE_FLUSH, null);
             }
         });
-        sendRequest("https://stadt.emilsleeper.com/api/reset");
+        mediaPlayer.setAudioStreamType(AudioManager.STREAM_MUSIC);
+        //sendRequest("https://stadt.emilsleeper.com/api/reset");
         locationManager = (LocationManager) getSystemService(LOCATION_SERVICE);
     }
 
@@ -76,34 +88,25 @@ public class MainService extends Service implements LocationListener {
     }
 
     public JSONObject sendRequest(String targetUrl) {
-        HttpURLConnection connection = null;
+        HttpsURLConnection connection;
         try {
             URL url = new URL(targetUrl);
-            connection = (HttpURLConnection) url.openConnection();
+            connection = (HttpsURLConnection) url.openConnection();
             connection.setConnectTimeout(5000);
             connection.setRequestMethod("GET");
             connection.connect();
 
             InputStream in = new BufferedInputStream(connection.getInputStream());
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
-                String result = new BufferedReader(new InputStreamReader(in))
-                        .lines().collect(Collectors.joining("\n"));
-                return new JSONObject(result);
-            } else {
-                return new JSONObject("{\"status\" : \"-1\", \"message\" : \"Ihr Gerät ist veraltet.\"}");
-            }
-        } catch (SocketTimeoutException e) {
-            try {
-                return new JSONObject("{\"status\" : \"-1\", \"message\" : \"Der Server hat nicht rechtzeitig geantwortet, falls das Problem weiterhin besteht, sind die Server gerade nicht verfügbar.\"}");
-            } catch (JSONException ex) {
-                throw new RuntimeException(ex);
-            }
-        } catch (JSONException | IOException e) {
+
+            @SuppressLint({"NewApi", "LocalSuppress"}) String result = new BufferedReader(new InputStreamReader(in)).lines().collect(Collectors.joining("\n"));
+            return new JSONObject(result);
+        } catch (IOException | JSONException e) {
+            System.out.println(e);
+        }
+        try {
+            return new JSONObject("{\"status\" : \"1\", \"message\" : \"Error.\"}");
+        } catch (JSONException e) {
             throw new RuntimeException(e);
-        } finally {
-            if (connection != null) {
-                connection.disconnect();
-            }
         }
     }
 
@@ -118,10 +121,10 @@ public class MainService extends Service implements LocationListener {
         if (debugMode) {
             changeViewText("Sende Anfrage");
         }
-        String message, status, server_message;
+        String content, status, server_message;
+        boolean isAudioMessage = false;
 
         JSONObject server_answer = sendRequest("https://stadt.emilsleeper.com/api/get_nearest_place/"+location.getLatitude()+"/"+location.getLongitude());
-
         if (debugMode) {
             changeViewText("Antwort erhalten");
         }
@@ -131,7 +134,7 @@ public class MainService extends Service implements LocationListener {
             server_message = (String) server_answer.get("message");
         } catch (JSONException e) {
             if (debugMode) {
-                changeViewText("Der Server gab kein JSON-Objekt zurück, sondern: "+server_answer.toString());
+                changeViewText("Der Server gab kein JSON-Objekt zurück, sondern: "+ server_answer);
                 return;
             }
             tts.speak("Der Server gab eine ungültige Antwort.", TextToSpeech.QUEUE_ADD, null);
@@ -140,28 +143,56 @@ public class MainService extends Service implements LocationListener {
         }
         if (debugMode) {
             changeViewText(server_answer.toString());
-            return;
+            //return;
         }
         switch (status) {
             case "-1":
-                message = "Es gab einen schwerwiegenden Fehler: " + server_message;
+                content = "Es gab einen schwerwiegenden Fehler: " + server_message;
                 break;
             case "0":
-                message = "Der Server gab folgenden Error zurück: " + server_message;
+                content = "Der Server gab folgenden Error zurück: " + server_message;
                 break;
             case "1":
-                message = server_message;
+                content = server_message;
+                break;
+            case "3":
+                isAudioMessage = true;
+                content = "https://stadt.emilsleeper.com/static/"+server_message;
                 break;
             case "2":
                 return;
             default:
-                message = "Bitte aktualisieren sie die App, falls vorhanden im Play Store, der Server hat einen in dieser Version unbekannten Statuscode zurückgegeben";
+                content = "Bitte aktualisieren sie die App, falls vorhanden im Play Store, der Server hat einen in dieser Version unbekannten Statuscode zurückgegeben";
                 break;
         }
-        if (!lastMessage.equals(message)) {
-            changeViewText(message);
-            tts.speak(message, TextToSpeech.QUEUE_ADD, null);
+        if (debugMode) {
+            changeViewText(content);
         }
-        lastMessage = message;
+        if (mediaPlayer.isPlaying()) {
+            mediaPlayer.stop();
+        }
+        mediaPlayer.release();
+        mediaPlayer = new MediaPlayer();
+        mediaPlayer.setAudioStreamType(AudioManager.STREAM_MUSIC);
+        if (tts.isSpeaking()) {
+            tts.stop();
+        }
+        if (!lastMessage.equals(content)) {
+            if (isAudioMessage) {
+                try {
+                    mediaPlayer.setDataSource(content);
+                    mediaPlayer.setLooping(false);
+                    mediaPlayer.prepare();
+                    mediaPlayer.start();
+                } catch (IOException e) {
+                    throw new RuntimeException(e);
+                }
+            } else {
+                changeViewText(content);
+                tts.speak(content, TextToSpeech.QUEUE_ADD, null);
+            }
+        }
+        lastMessage = content;
     }
+
 }
